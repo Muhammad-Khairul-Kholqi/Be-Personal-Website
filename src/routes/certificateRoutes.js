@@ -9,7 +9,6 @@ const router = express.Router();
 
 router.get('/', CertificateController.getAll);
 router.get('/:id', CertificateController.getById);
-
 router.post('/', authenticateToken, upload.single('image'), CertificateController.create);
 router.put('/:id', authenticateToken, upload.single('image'), CertificateController.update);
 router.delete('/:id', authenticateToken, CertificateController.delete);
