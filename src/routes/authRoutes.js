@@ -1,0 +1,15 @@
+const express = require('express');
+const AuthController = require('../controllers/authController');
+const {
+    authenticateToken
+} = require('../middlewares/auth');
+const upload = require('../config/multer');
+
+const router = express.Router();
+
+router.post('/login', AuthController.login);
+router.get('/profile', authenticateToken, AuthController.getProfile);
+router.put('/profile', authenticateToken, upload.single('image'), AuthController.updateProfile);
+router.put('/change-password', authenticateToken, AuthController.changePassword);
+
+module.exports = router;
