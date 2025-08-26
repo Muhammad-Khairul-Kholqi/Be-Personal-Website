@@ -62,7 +62,8 @@ class ServicesModel {
             .update({
                 title,
                 hashtag,
-                description
+                description,
+                icon
             })
             .eq('id', id)
             .select()

@@ -31,7 +31,8 @@ class ServicesController {
             const {
                 title,
                 description,
-                hashtag
+                hashtag,
+                icon
             } = req.body;
             if (!title || !title.trim()) {
                 return res.status(400).json({
