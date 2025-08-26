@@ -4,6 +4,7 @@ const UserModel = require('../models/userModel');
 const supabase = require('../config/supabase');
 const fs = require('fs');
 const path = require('path');
+require('dotenv').config();
 
 const BUCKET = 'user-images';
 const MAX_MB = 10;
@@ -15,6 +16,13 @@ class AuthController {
                 email,
                 password
             } = req.body;
+
+            if (!process.env.JWT_SECRET) {
+                console.error('JWT_SECRET is not defined in environment variables');
+                return res.status(500).json({
+                    error: 'Server configuration error'
+                });
+            }
 
             if (!email || !password) {
                 return res.status(400).json({
@@ -56,6 +64,7 @@ class AuthController {
                 token
             });
         } catch (err) {
+            console.error('Login error:', err);
             res.status(500).json({
                 error: err.message
             });
