@@ -1,7 +1,6 @@
 const jwt = require('jsonwebtoken');
 
 const authenticateToken = (req, res, next) => {
-    // Cek JWT_SECRET
     if (!process.env.JWT_SECRET) {
         console.error('JWT_SECRET is not defined in environment variables');
         return res.status(500).json({
@@ -32,9 +31,7 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
-// Tambahkan endpoint verify untuk frontend
 const verifyToken = (req, res) => {
-    // Token sudah diverifikasi di middleware authenticateToken
     res.json({
         message: 'Token valid',
         userId: req.userId,

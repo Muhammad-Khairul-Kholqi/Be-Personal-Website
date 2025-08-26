@@ -10,7 +10,7 @@ const serviceRoute = require('./routes/serviceRoute');
 const app = express();
 
 app.use(cors({
-    origin: 'https://backend-personal-website-khairulkholqi.vercel.app',
+    origin: process.env.URL_DEPLOY,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 }));
