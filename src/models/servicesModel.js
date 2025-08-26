@@ -28,7 +28,8 @@ class ServicesModel {
     static async create({
         title,
         hashtag,
-        description
+        description,
+        icon
     }) {
         const {
             data,
@@ -38,7 +39,8 @@ class ServicesModel {
             .insert([{
                 title,
                 hashtag,
-                description
+                description,
+                icon
             }])
             .select()
             .single();
@@ -49,7 +51,8 @@ class ServicesModel {
     static async update(id, {
         title,
         hashtag,
-        description
+        description,
+        icon
     }) {
         const {
             data,

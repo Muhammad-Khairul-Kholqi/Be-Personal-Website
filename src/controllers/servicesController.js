@@ -48,11 +48,17 @@ class ServicesController {
                     error: 'Hashtag is required'
                 });
             }
+            if (!icon || !icon.trim()) {
+                return res.status(400).json({
+                    error: 'Icon is required'
+                });
+            }
 
             const newSerc = await ServicesModel.create({
                 title: title.trim(),
                 description: description.trim(),
-                hashtag: hashtag.trim()
+                hashtag: hashtag.trim(),
+                icon: icon.trim()
             });
             return res.status(201).json(newSerc);
         } catch (err) {
@@ -77,13 +83,15 @@ class ServicesController {
             const {
                 title,
                 description,
-                hashtag
+                hashtag,
+                icon
             } = req.body;
 
             const updatedSerc = await ServicesModel.update(id, {
                 title: title !== undefined ? title.trim() : existing.title,
                 description: description !== undefined ? description.trim() : existing.description,
-                hashtag: hashtag !== undefined ? hashtag.trim() : existing.hashtag
+                hashtag: hashtag !== undefined ? hashtag.trim() : existing.hashtag,
+                icon: icon !== undefined ? icon.trim() : existing.icon
             });
             res.json(updatedSerc);
         } catch (err) {
