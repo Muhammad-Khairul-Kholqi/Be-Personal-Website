@@ -10,7 +10,7 @@ const serviceRoute = require('./routes/serviceRoute');
 const app = express();
 
 app.use(cors({
-    origin: process.env.URL_DEPLOY,
+    origin: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 }));
