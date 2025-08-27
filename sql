@@ -28,7 +28,7 @@ CREATE TABLE public.careers (
   start_time timestamp with time zone,
   end_time timestamp with time zone,
   position character varying,
-  description text,
+  job_list text,
   technology_id bigint,
   CONSTRAINT careers_pkey PRIMARY KEY (id),
   CONSTRAINT careers_technology_id_fkey FOREIGN KEY (technology_id) REFERENCES public.technology(id)
