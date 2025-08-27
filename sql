@@ -18,6 +18,15 @@ CREATE TABLE public.blogs (
   CONSTRAINT blogs_pkey PRIMARY KEY (id),
   CONSTRAINT blogs_author_id_fkey FOREIGN KEY (author_id) REFERENCES public.users(id)
 );
+CREATE TABLE public.career_technologies (
+  id bigint NOT NULL DEFAULT nextval('career_technologies_id_seq'::regclass),
+  career_id bigint NOT NULL,
+  technology_id bigint NOT NULL,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT career_technologies_pkey PRIMARY KEY (id),
+  CONSTRAINT career_technologies_career_id_fkey FOREIGN KEY (career_id) REFERENCES public.careers(id),
+  CONSTRAINT career_technologies_technology_id_fkey FOREIGN KEY (technology_id) REFERENCES public.technology(id)
+);
 CREATE TABLE public.careers (
   id bigint NOT NULL DEFAULT nextval('careers_id_seq'::regclass),
   created_at timestamp with time zone DEFAULT now(),
@@ -29,9 +38,7 @@ CREATE TABLE public.careers (
   end_time timestamp with time zone,
   position character varying,
   job_list text,
-  technology_id bigint,
-  CONSTRAINT careers_pkey PRIMARY KEY (id),
-  CONSTRAINT careers_technology_id_fkey FOREIGN KEY (technology_id) REFERENCES public.technology(id)
+  CONSTRAINT careers_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.certificates (
   id bigint NOT NULL DEFAULT nextval('cerfificates_id_seq'::regclass),
@@ -45,8 +52,8 @@ CREATE TABLE public.contacts (
   id bigint NOT NULL DEFAULT nextval('contacts_id_seq'::regclass),
   created_at timestamp with time zone DEFAULT now(),
   title character varying NOT NULL,
-  username character varying,
   link character varying,
+  icon character varying,
   CONSTRAINT contacts_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.educations (
@@ -58,19 +65,25 @@ CREATE TABLE public.educations (
   end_time timestamp with time zone,
   CONSTRAINT educations_pkey PRIMARY KEY (id)
 );
+CREATE TABLE public.project_technologies (
+  id bigint NOT NULL DEFAULT nextval('project_technologies_id_seq'::regclass),
+  project_id bigint NOT NULL,
+  technology_id bigint NOT NULL,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT project_technologies_pkey PRIMARY KEY (id),
+  CONSTRAINT project_technologies_technology_id_fkey FOREIGN KEY (technology_id) REFERENCES public.technology(id),
+  CONSTRAINT project_technologies_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.projects(id)
+);
 CREATE TABLE public.projects (
   id bigint NOT NULL DEFAULT nextval('projects_id_seq'::regclass),
   created_at timestamp with time zone DEFAULT now(),
   title character varying NOT NULL,
   image character varying,
   description text,
-  list_pekerjaan ARRAY,
   url_github character varying,
   url_demo character varying,
-  technology_id bigint,
-  slug character varying NOT NULL UNIQUE,
-  CONSTRAINT projects_pkey PRIMARY KEY (id),
-  CONSTRAINT projects_technology_id_fkey FOREIGN KEY (technology_id) REFERENCES public.technology(id)
+  list_job text,
+  CONSTRAINT projects_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.services (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
@@ -78,6 +91,7 @@ CREATE TABLE public.services (
   title character varying,
   hashtag character varying,
   description text,
+  icon character varying,
   CONSTRAINT services_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.soft_skills (
@@ -113,12 +127,12 @@ CREATE TABLE public.users (
 
 
 CONTACT (DONE)
-PROJECTS
-CAREERS 
+PROJECTS (DONE)
+CAREERS (DONE)
 SERVICES (DONE)
 TECHNOLOGY (DONE)
 SOFT_SKILLS (DONE)
 EDUCATIONS 
 BLOGS 
 CERTFICATES (DONE)
-USERS (DONE)
+USERS (tinggal CRUD profle)
