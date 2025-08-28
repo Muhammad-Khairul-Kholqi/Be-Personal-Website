@@ -37,7 +37,8 @@ class CertificateController {
         try {
             const {
                 title,
-                time
+                time,
+                company
             } = req.body;
             if (!title || !title.trim()) {
                 return res.status(400).json({
@@ -94,6 +95,7 @@ class CertificateController {
                 title: title.trim(),
                 image: imageUrl,
                 time: time || null,
+                company: company.trim(),
             });
 
             res.status(201).json(newCert);
@@ -117,7 +119,8 @@ class CertificateController {
             } = req.params;
             const {
                 title,
-                time
+                time,
+                company
             } = req.body;
             let imageUrl = req.body.image || null;
 
@@ -167,6 +170,7 @@ class CertificateController {
                 title: title || null,
                 image: imageUrl,
                 time: time || null,
+                company: company || null,   
             });
 
             res.json(updatedCert);

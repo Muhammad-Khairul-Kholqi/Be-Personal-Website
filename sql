@@ -135,4 +135,4 @@ SOFT_SKILLS (DONE)
 EDUCATIONS 
 BLOGS 
 CERTFICATES (DONE)
-USERS (tinggal CRUD profle)
+USERS (tinggal edit profle)
