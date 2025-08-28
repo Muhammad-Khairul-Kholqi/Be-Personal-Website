@@ -12,9 +12,11 @@ CREATE TABLE public.blogs (
   cover_image character varying,
   author_id bigint,
   tags ARRAY,
-  status character varying DEFAULT 'draft'::character varying,
+  status USER-DEFINED DEFAULT 'process'::blog_status,
   views_count bigint DEFAULT 0,
   likes_count bigint DEFAULT 0,
+  type USER-DEFINED DEFAULT 'frontend'::blog_type,
+  types ARRAY DEFAULT ARRAY['frontend'::blog_type],
   CONSTRAINT blogs_pkey PRIMARY KEY (id),
   CONSTRAINT blogs_author_id_fkey FOREIGN KEY (author_id) REFERENCES public.users(id)
 );
@@ -32,7 +34,7 @@ CREATE TABLE public.careers (
   created_at timestamp with time zone DEFAULT now(),
   image character varying,
   agency_name character varying,
-  type character varying,
+  type USER-DEFINED DEFAULT 'full_time'::status_type,
   address text,
   start_time timestamp with time zone,
   end_time timestamp with time zone,
@@ -46,6 +48,7 @@ CREATE TABLE public.certificates (
   title character varying NOT NULL,
   image character varying,
   time timestamp with time zone,
+  company character varying,
   CONSTRAINT certificates_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.contacts (
