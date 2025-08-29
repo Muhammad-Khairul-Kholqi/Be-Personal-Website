@@ -28,7 +28,8 @@ class ContactModel {
     static async create({
         title,
         link,
-        icon
+        icon,
+        username
     }) {
         const {
             data,
@@ -38,7 +39,8 @@ class ContactModel {
             .insert([{
                 title,
                 link,
-                icon
+                icon,
+                username
             }])
             .select()
             .single();
@@ -49,7 +51,8 @@ class ContactModel {
     static async update(id, {
         title,
         link,
-        icon
+        icon,
+        username
     }) {
         const {
             data,
@@ -59,7 +62,8 @@ class ContactModel {
             .update({
                 title,
                 link,
-                icon
+                icon,
+                username
             })
             .eq('id', id)
             .select()

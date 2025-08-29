@@ -31,7 +31,8 @@ class ContactController {
             const {
                 title,
                 link,
-                icon
+                icon,
+                username
             } = req.body;
             if (!title || !title.trim()) {
                 return res.status(400).json({
@@ -48,11 +49,17 @@ class ContactController {
                     error: 'Icon is required'
                 });
             }
+            if (!username || !username.trim()) {
+                return res.status(400).json({
+                    error: 'Username is required'
+                });
+            }
 
             const newSerc = await ContactModel.create({
                 title: title.trim(),
                 link: link.trim(),
-                icon: icon.trim()
+                icon: icon.trim(),
+                username: username.trim()
             });
             return res.status(201).json(newSerc);
         } catch (err) {
@@ -77,13 +84,15 @@ class ContactController {
             const {
                 title,
                 link,
-                icon
+                icon,
+                username
             } = req.body;
 
             const updatedSerc = await ContactModel.update(id, {
                 title: title !== undefined ? title.trim() : existing.title,
                 link: link !== undefined ? link.trim() : existing.description,
-                icon: icon !== undefined ? icon.trim() : existing.icon
+                icon: icon !== undefined ? icon.trim() : existing.icon,
+                username: username !== undefined ? username.trim() : existing.username
             });
             res.json(updatedSerc);
         } catch (err) {
