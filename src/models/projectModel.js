@@ -63,6 +63,7 @@ class ProjectModel {
         url_github,
         url_demo,
         image,
+        status,
         technology_ids 
     }) {
         const {
@@ -77,6 +78,7 @@ class ProjectModel {
                 url_github,
                 url_demo,
                 image,
+                status
             }])
             .select()
             .single();
@@ -108,6 +110,7 @@ class ProjectModel {
         url_github,
         url_demo,
         image,
+        status,
         technology_ids 
     }) {
         const updateData = {};
@@ -117,6 +120,7 @@ class ProjectModel {
         if (url_github !== undefined) updateData.url_github = url_github;
         if (url_demo !== undefined) updateData.url_demo = url_demo;
         if (image !== undefined) updateData.image = image;
+        if (status !== undefined) updateData.status = status;
 
         const {
             data: projectData,
