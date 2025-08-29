@@ -48,6 +48,7 @@ class ProjectController {
                 list_job,
                 url_github,
                 url_demo,
+                status,
                 technology_ids
             } = req.body;
 
@@ -74,6 +75,11 @@ class ProjectController {
             if (!url_demo || !url_demo.trim()) {
                 return res.status(400).json({
                     error: 'URL Demo is required'
+                });
+            }
+            if (!status || !status.trim()) {
+                return res.status(400).json({
+                    error: 'Status is required'
                 });
             }
 
@@ -146,6 +152,7 @@ class ProjectController {
                 list_job: list_job ?.trim() || null,
                 url_github: url_github || null,
                 url_demo: url_demo || null,
+                status: status || null,
                 image: imageUrl,
                 technology_ids: parsedTechnologyIds
             });
@@ -175,6 +182,7 @@ class ProjectController {
                 list_job,
                 url_github,
                 url_demo,
+                status,
                 technology_ids
             } = req.body;
 
@@ -268,6 +276,7 @@ class ProjectController {
                 list_job: (typeof list_job === 'string') ? list_job.trim() || null : existing.list_job,
                 url_github: url_github !== undefined ? url_github : existing.url_github,
                 url_demo: url_demo !== undefined ? url_demo : existing.url_demo,
+                status: status !== undefined ? status : existing.status,
                 image: imageUrl,
                 technology_ids: parsedTechnologyIds
             };
