@@ -6,7 +6,6 @@ CREATE TABLE public.blogs (
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   title character varying NOT NULL,
-  slug character varying NOT NULL UNIQUE,
   excerpt text,
   content text,
   cover_image character varying,
@@ -16,7 +15,6 @@ CREATE TABLE public.blogs (
   views_count bigint DEFAULT 0,
   likes_count bigint DEFAULT 0,
   type USER-DEFINED DEFAULT 'frontend'::blog_type,
-  types ARRAY DEFAULT ARRAY['frontend'::blog_type],
   CONSTRAINT blogs_pkey PRIMARY KEY (id),
   CONSTRAINT blogs_author_id_fkey FOREIGN KEY (author_id) REFERENCES public.users(id)
 );

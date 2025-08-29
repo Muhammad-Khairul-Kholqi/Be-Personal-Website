@@ -93,7 +93,8 @@ class AuthController {
                 fullname,
                 username,
                 description,
-                address
+                address,
+                email
             } = req.body;
             const userId = req.userId;
 
@@ -167,6 +168,7 @@ class AuthController {
                 username: (typeof username === 'string' && username.trim()) ? username.trim() : existing.username,
                 description: typeof description === 'string' ? description.trim() : existing.description,
                 address: typeof address === 'string' ? address.trim() : existing.address,
+                email: typeof email === 'string' ? email.trim() : existing.email,
                 image: imageUrl,
             };
 
