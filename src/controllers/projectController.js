@@ -67,16 +67,6 @@ class ProjectController {
                     error: 'List Job is required'
                 });
             }
-            if (!url_github || !url_github.trim()) {
-                return res.status(400).json({
-                    error: 'URL Github is required'
-                });
-            }
-            if (!url_demo || !url_demo.trim()) {
-                return res.status(400).json({
-                    error: 'URL Demo is required'
-                });
-            }
             if (!status || !status.trim()) {
                 return res.status(400).json({
                     error: 'Status is required'
