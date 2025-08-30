@@ -11,6 +11,7 @@ const softSkillRoutes = require('./routes/softSkillRoutes');
 const careerRoutes = require('./routes/careerRoutes'); 
 const projectRoutes = require('./routes/projectRoutes');
 const skillRoutes = require('./routes/skillRoutes');
+const educationRoutes = require('./routes/educationRoutes');
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use('/api/soft-skills', softSkillRoutes);
 app.use('/api/careers', careerRoutes); 
 app.use('/api/projects', projectRoutes);
 app.use('/api/skills', skillRoutes);
+app.use('/api/education', educationRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
