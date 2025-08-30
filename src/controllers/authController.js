@@ -87,7 +87,9 @@ class AuthController {
     }
 
     static async updateProfile(req, res) {
-        let localPath;
+        let localImagePath;
+        let localResumePath;
+
         try {
             const {
                 fullname,
@@ -100,9 +102,14 @@ class AuthController {
 
             const existing = await UserModel.getById(userId);
             if (!existing) {
-                if (req.file) {
+                if (req.files ?.image ?. [0]) {
                     try {
-                        fs.unlinkSync(req.file.path);
+                        fs.unlinkSync(req.files.image[0].path);
+                    } catch (_) {}
+                }
+                if (req.files ?.resume ?. [0]) {
+                    try {
+                        fs.unlinkSync(req.files.resume[0].path);
                     } catch (_) {}
                 }
                 return res.status(404).json({
@@ -111,29 +118,32 @@ class AuthController {
             }
 
             let imageUrl = req.body.image || existing.image || null;
+            let resumeUrl = req.body.resume || existing.resume || null;
 
-            if (req.file) {
-                const fileSizeInMB = req.file.size / (1024 * 1024);
+            if (req.files ?.image ?. [0]) {
+                const imageFile = req.files.image[0];
+                const fileSizeInMB = imageFile.size / (1024 * 1024);
+
                 if (fileSizeInMB > MAX_MB) {
                     try {
-                        fs.unlinkSync(req.file.path);
+                        fs.unlinkSync(imageFile.path);
                     } catch (_) {}
                     return res.status(400).json({
-                        error: `File too large. Max ${MAX_MB}MB allowed`
+                        error: `Image file too large. Max ${MAX_MB}MB allowed`
                     });
                 }
 
-                localPath = req.file.path;
-                const ext = path.extname(req.file.originalname) || '';
+                localImagePath = imageFile.path;
+                const ext = path.extname(imageFile.originalname) || '';
                 const fileName = `uploads/user-images/${Date.now()}-${Math.round(Math.random()*1e9)}${ext}`;
-                const buffer = fs.readFileSync(localPath);
+                const buffer = fs.readFileSync(localImagePath);
 
                 const {
                     error: uploadError
                 } = await supabase.storage
                     .from(BUCKET)
                     .upload(fileName, buffer, {
-                        contentType: req.file.mimetype,
+                        contentType: imageFile.mimetype,
                         upsert: true,
                     });
 
@@ -151,11 +161,64 @@ class AuthController {
                 imageUrl = data.publicUrl;
 
                 try {
-                    fs.unlinkSync(localPath);
+                    fs.unlinkSync(localImagePath);
                 } catch (_) {}
 
                 if (existing.image && existing.image.includes(`/storage/v1/object/public/${BUCKET}/`)) {
                     const parts = existing.image.split(`/${BUCKET}/`);
+                    if (parts.length > 1) {
+                        const oldPath = parts[1];
+                        await supabase.storage.from(BUCKET).remove([oldPath]);
+                    }
+                }
+            }
+
+            if (req.files ?.resume ?. [0]) {
+                const resumeFile = req.files.resume[0];
+                const fileSizeInMB = resumeFile.size / (1024 * 1024);
+
+                if (fileSizeInMB > MAX_MB) {
+                    try {
+                        fs.unlinkSync(resumeFile.path);
+                    } catch (_) {}
+                    return res.status(400).json({
+                        error: `Resume file too large. Max ${MAX_MB}MB allowed`
+                    });
+                }
+
+                localResumePath = resumeFile.path;
+                const ext = path.extname(resumeFile.originalname) || '';
+                const fileName = `uploads/resumes/${Date.now()}-${Math.round(Math.random()*1e9)}${ext}`;
+                const buffer = fs.readFileSync(localResumePath);
+
+                const {
+                    error: uploadError
+                } = await supabase.storage
+                    .from(BUCKET)
+                    .upload(fileName, buffer, {
+                        contentType: resumeFile.mimetype,
+                        upsert: true,
+                    });
+
+                if (uploadError) throw uploadError;
+
+                const {
+                    data,
+                    error: publicUrlError
+                } = supabase.storage
+                    .from(BUCKET)
+                    .getPublicUrl(fileName);
+
+                if (publicUrlError) throw publicUrlError;
+
+                resumeUrl = data.publicUrl;
+
+                try {
+                    fs.unlinkSync(localResumePath);
+                } catch (_) {}
+
+                if (existing.resume && existing.resume.includes(`/storage/v1/object/public/${BUCKET}/`)) {
+                    const parts = existing.resume.split(`/${BUCKET}/`);
                     if (parts.length > 1) {
                         const oldPath = parts[1];
                         await supabase.storage.from(BUCKET).remove([oldPath]);
@@ -170,6 +233,7 @@ class AuthController {
                 address: typeof address === 'string' ? address.trim() : existing.address,
                 email: typeof email === 'string' ? email.trim() : existing.email,
                 image: imageUrl,
+                resume: resumeUrl,
             };
 
             const updatedUser = await UserModel.update(userId, payload);
@@ -180,9 +244,14 @@ class AuthController {
 
             res.json(userWithoutPassword);
         } catch (err) {
-            if (localPath) {
+            if (localImagePath) {
                 try {
-                    fs.unlinkSync(localPath);
+                    fs.unlinkSync(localImagePath);
+                } catch (_) {}
+            }
+            if (localResumePath) {
+                try {
+                    fs.unlinkSync(localResumePath);
                 } catch (_) {}
             }
             res.status(500).json({
