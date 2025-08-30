@@ -24,8 +24,8 @@ CREATE TABLE public.career_technologies (
   technology_id bigint NOT NULL,
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT career_technologies_pkey PRIMARY KEY (id),
-  CONSTRAINT career_technologies_career_id_fkey FOREIGN KEY (career_id) REFERENCES public.careers(id),
-  CONSTRAINT career_technologies_technology_id_fkey FOREIGN KEY (technology_id) REFERENCES public.technology(id)
+  CONSTRAINT career_technologies_technology_id_fkey FOREIGN KEY (technology_id) REFERENCES public.technology(id),
+  CONSTRAINT career_technologies_career_id_fkey FOREIGN KEY (career_id) REFERENCES public.careers(id)
 );
 CREATE TABLE public.careers (
   id bigint NOT NULL DEFAULT nextval('careers_id_seq'::regclass),
@@ -55,6 +55,7 @@ CREATE TABLE public.contacts (
   title character varying NOT NULL,
   link character varying,
   icon character varying,
+  username character varying,
   CONSTRAINT contacts_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.educations (
@@ -84,6 +85,7 @@ CREATE TABLE public.projects (
   url_github character varying,
   url_demo character varying,
   list_job text,
+  status USER-DEFINED,
   CONSTRAINT projects_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.services (
@@ -94,6 +96,11 @@ CREATE TABLE public.services (
   description text,
   icon character varying,
   CONSTRAINT services_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.skills (
+  id bigint NOT NULL DEFAULT nextval('skills_id_seq'::regclass),
+  name character varying NOT NULL UNIQUE,
+  CONSTRAINT skills_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.soft_skills (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
@@ -108,6 +115,13 @@ CREATE TABLE public.technology (
   image character varying,
   CONSTRAINT technology_pkey PRIMARY KEY (id)
 );
+CREATE TABLE public.user_skills (
+  user_id bigint NOT NULL,
+  skill_id bigint NOT NULL,
+  CONSTRAINT user_skills_pkey PRIMARY KEY (user_id, skill_id),
+  CONSTRAINT user_skills_skill_id_fkey FOREIGN KEY (skill_id) REFERENCES public.skills(id),
+  CONSTRAINT user_skills_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
 CREATE TABLE public.users (
   id bigint NOT NULL DEFAULT nextval('users_id_seq'::regclass),
   created_at timestamp with time zone DEFAULT now(),
@@ -118,6 +132,7 @@ CREATE TABLE public.users (
   username character varying,
   description text,
   address text,
+  resume character varying,
   CONSTRAINT users_pkey PRIMARY KEY (id)
 );
 
@@ -137,3 +152,37 @@ EDUCATIONS
 BLOGS 
 CERTFICATES (DONE)
 USERS (tinggal edit profle)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// models/skillsModel.js
+
+
+// controllers/skillsController.js
+
+
+// routes/skillsRoutes.js
+
+
+// Updated AuthController with Skills Integration

@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const UserModel = require('../models/userModel');
+const SkillsModel = require('../models/skillsModel');
 const supabase = require('../config/supabase');
 const fs = require('fs');
 const path = require('path');
@@ -53,6 +54,9 @@ class AuthController {
                 }
             );
 
+            // Get user skills
+            const userSkills = await SkillsModel.getUserSkills(user.id);
+
             const {
                 password: _,
                 ...userWithoutPassword
@@ -60,7 +64,10 @@ class AuthController {
 
             res.json({
                 message: 'Login successful',
-                user: userWithoutPassword,
+                user: {
+                    ...userWithoutPassword,
+                    skills: userSkills
+                },
                 token
             });
         } catch (err) {
@@ -74,11 +81,17 @@ class AuthController {
     static async getProfile(req, res) {
         try {
             const user = await UserModel.getById(req.userId);
+            const userSkills = await SkillsModel.getUserSkills(req.userId);
+
             const {
                 password: _,
                 ...userWithoutPassword
             } = user;
-            res.json(userWithoutPassword);
+
+            res.json({
+                ...userWithoutPassword,
+                skills: userSkills
+            });
         } catch (err) {
             res.status(500).json({
                 error: err.message
@@ -96,12 +109,14 @@ class AuthController {
                 username,
                 description,
                 address,
-                email
+                email,
+                skillIds
             } = req.body;
             const userId = req.userId;
 
             const existing = await UserModel.getById(userId);
             if (!existing) {
+                // Cleanup uploaded files if user not found
                 if (req.files ?.image ?. [0]) {
                     try {
                         fs.unlinkSync(req.files.image[0].path);
@@ -120,6 +135,7 @@ class AuthController {
             let imageUrl = req.body.image || existing.image || null;
             let resumeUrl = req.body.resume || existing.resume || null;
 
+            // Handle image upload
             if (req.files ?.image ?. [0]) {
                 const imageFile = req.files.image[0];
                 const fileSizeInMB = imageFile.size / (1024 * 1024);
@@ -164,6 +180,7 @@ class AuthController {
                     fs.unlinkSync(localImagePath);
                 } catch (_) {}
 
+                // Remove old image if exists
                 if (existing.image && existing.image.includes(`/storage/v1/object/public/${BUCKET}/`)) {
                     const parts = existing.image.split(`/${BUCKET}/`);
                     if (parts.length > 1) {
@@ -173,6 +190,7 @@ class AuthController {
                 }
             }
 
+            // Handle resume upload
             if (req.files ?.resume ?. [0]) {
                 const resumeFile = req.files.resume[0];
                 const fileSizeInMB = resumeFile.size / (1024 * 1024);
@@ -217,6 +235,7 @@ class AuthController {
                     fs.unlinkSync(localResumePath);
                 } catch (_) {}
 
+                // Remove old resume if exists
                 if (existing.resume && existing.resume.includes(`/storage/v1/object/public/${BUCKET}/`)) {
                     const parts = existing.resume.split(`/${BUCKET}/`);
                     if (parts.length > 1) {
@@ -226,6 +245,7 @@ class AuthController {
                 }
             }
 
+            // Update user profile
             const payload = {
                 fullname: (typeof fullname === 'string' && fullname.trim()) ? fullname.trim() : existing.fullname,
                 username: (typeof username === 'string' && username.trim()) ? username.trim() : existing.username,
@@ -237,13 +257,48 @@ class AuthController {
             };
 
             const updatedUser = await UserModel.update(userId, payload);
+
+            // Handle skills update if provided
+            if (skillIds !== undefined) {
+                let parsedSkillIds = [];
+
+                if (typeof skillIds === 'string') {
+                    try {
+                        parsedSkillIds = JSON.parse(skillIds);
+                    } catch (e) {
+                        // If not JSON, treat as comma-separated values
+                        parsedSkillIds = skillIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+                    }
+                } else if (Array.isArray(skillIds)) {
+                    parsedSkillIds = skillIds.map(id => parseInt(id)).filter(id => !isNaN(id));
+                }
+
+                // Validate all skill IDs exist
+                for (const skillId of parsedSkillIds) {
+                    const skill = await SkillsModel.getById(skillId);
+                    if (!skill) {
+                        return res.status(404).json({
+                            error: `Skill with ID ${skillId} not found`
+                        });
+                    }
+                }
+
+                await SkillsModel.updateUserSkills(userId, parsedSkillIds);
+            }
+
+            // Get updated user with skills
+            const userSkills = await SkillsModel.getUserSkills(userId);
             const {
                 password: _,
                 ...userWithoutPassword
             } = updatedUser;
 
-            res.json(userWithoutPassword);
+            res.json({
+                ...userWithoutPassword,
+                skills: userSkills
+            });
         } catch (err) {
+            // Cleanup uploaded files on error
             if (localImagePath) {
                 try {
                     fs.unlinkSync(localImagePath);
