@@ -64,10 +64,17 @@ class SkillsModel {
         return true;
     }
 
-    static async create(name) {
-        const { data, error } = await supabase
+    static async create({
+        name
+    }) {
+        const {
+            data,
+            error
+        } = await supabase
             .from('skills')
-            .insert({ name })
+            .insert([{
+                name
+            }])
             .select()
             .single();
         if (error) throw error;
