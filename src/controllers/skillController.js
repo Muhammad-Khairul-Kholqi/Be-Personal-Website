@@ -4,9 +4,9 @@ class SkillController {
     static async getAll(req, res) {
         try {
             const skills = await SkillsModel.getAll();
-            res.json(skills);
+            return res.json(skills);
         } catch (err) {
-            res.status(500).json({
+            return res.status(500).json({
                 error: err.message
             });
         }

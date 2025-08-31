@@ -4,8 +4,7 @@ class SkillsModel {
     static async getAll() {
         const { data, error } = await supabase
             .from('skills')
-            .select('*')
-            .order('name');
+            .select('*');
         if (error) throw error;
         return data;
     }
