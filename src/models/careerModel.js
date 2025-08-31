@@ -139,7 +139,6 @@ class CareerModel {
         if (careerError) throw careerError;
 
         if (technology_ids !== undefined) {
-            // Hapus relasi lama
             await supabase
                 .from('career_technologies')
                 .delete()

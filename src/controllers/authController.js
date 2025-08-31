@@ -54,7 +54,6 @@ class AuthController {
                 }
             );
 
-            // Get user skills
             const userSkills = await SkillsModel.getUserSkills(user.id);
 
             const {
@@ -114,9 +113,18 @@ class AuthController {
             } = req.body;
             const userId = req.userId;
 
+            console.log('Received data:', {
+                fullname,
+                username,
+                description,
+                address,
+                email,
+                skillIds
+            });
+            console.log('Received files:', req.files);
+
             const existing = await UserModel.getById(userId);
             if (!existing) {
-                // Cleanup uploaded files if user not found
                 if (req.files ?.image ?. [0]) {
                     try {
                         fs.unlinkSync(req.files.image[0].path);
@@ -132,10 +140,9 @@ class AuthController {
                 });
             }
 
-            let imageUrl = req.body.image || existing.image || null;
-            let resumeUrl = req.body.resume || existing.resume || null;
+            let imageUrl = existing.image || null;
+            let resumeUrl = existing.resume || null;
 
-            // Handle image upload
             if (req.files ?.image ?. [0]) {
                 const imageFile = req.files.image[0];
                 const fileSizeInMB = imageFile.size / (1024 * 1024);
@@ -180,7 +187,6 @@ class AuthController {
                     fs.unlinkSync(localImagePath);
                 } catch (_) {}
 
-                // Remove old image if exists
                 if (existing.image && existing.image.includes(`/storage/v1/object/public/${BUCKET}/`)) {
                     const parts = existing.image.split(`/${BUCKET}/`);
                     if (parts.length > 1) {
@@ -190,7 +196,6 @@ class AuthController {
                 }
             }
 
-            // Handle resume upload
             if (req.files ?.resume ?. [0]) {
                 const resumeFile = req.files.resume[0];
                 const fileSizeInMB = resumeFile.size / (1024 * 1024);
@@ -235,7 +240,6 @@ class AuthController {
                     fs.unlinkSync(localResumePath);
                 } catch (_) {}
 
-                // Remove old resume if exists
                 if (existing.resume && existing.resume.includes(`/storage/v1/object/public/${BUCKET}/`)) {
                     const parts = existing.resume.split(`/${BUCKET}/`);
                     if (parts.length > 1) {
@@ -245,7 +249,6 @@ class AuthController {
                 }
             }
 
-            // Update user profile
             const payload = {
                 fullname: (typeof fullname === 'string' && fullname.trim()) ? fullname.trim() : existing.fullname,
                 username: (typeof username === 'string' && username.trim()) ? username.trim() : existing.username,
@@ -256,49 +259,64 @@ class AuthController {
                 resume: resumeUrl,
             };
 
+            console.log('Updating user with payload:', payload);
+
             const updatedUser = await UserModel.update(userId, payload);
 
-            // Handle skills update if provided
             if (skillIds !== undefined) {
                 let parsedSkillIds = [];
 
+                console.log('Processing skillIds:', skillIds, 'Type:', typeof skillIds);
+
                 if (typeof skillIds === 'string') {
-                    try {
-                        parsedSkillIds = JSON.parse(skillIds);
-                    } catch (e) {
-                        // If not JSON, treat as comma-separated values
-                        parsedSkillIds = skillIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+                    if (skillIds.trim() === '' || skillIds.trim() === '[]') {
+                        parsedSkillIds = [];
+                    } else {
+                        try {
+                            parsedSkillIds = JSON.parse(skillIds);
+                        } catch (e) {
+                            parsedSkillIds = skillIds.split(',')
+                                .map(id => parseInt(id.trim()))
+                                .filter(id => !isNaN(id));
+                        }
                     }
                 } else if (Array.isArray(skillIds)) {
                     parsedSkillIds = skillIds.map(id => parseInt(id)).filter(id => !isNaN(id));
                 }
 
-                // Validate all skill IDs exist
-                for (const skillId of parsedSkillIds) {
-                    const skill = await SkillsModel.getById(skillId);
-                    if (!skill) {
-                        return res.status(404).json({
-                            error: `Skill with ID ${skillId} not found`
-                        });
+                console.log('Parsed skillIds:', parsedSkillIds);
+
+                if (parsedSkillIds.length > 0) {
+                    for (const skillId of parsedSkillIds) {
+                        const skill = await SkillsModel.getById(skillId);
+                        if (!skill) {
+                            return res.status(404).json({
+                                error: `Skill with ID ${skillId} not found`
+                            });
+                        }
                     }
                 }
 
                 await SkillsModel.updateUserSkills(userId, parsedSkillIds);
             }
 
-            // Get updated user with skills
             const userSkills = await SkillsModel.getUserSkills(userId);
             const {
                 password: _,
                 ...userWithoutPassword
             } = updatedUser;
 
+            console.log('Final user data:', {
+                ...userWithoutPassword,
+                skills: userSkills
+            });
+
             res.json({
                 ...userWithoutPassword,
                 skills: userSkills
             });
         } catch (err) {
-            // Cleanup uploaded files on error
+            console.error('Update profile error:', err);
             if (localImagePath) {
                 try {
                     fs.unlinkSync(localImagePath);
