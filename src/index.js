@@ -32,7 +32,7 @@ app.use('/api/soft-skills', softSkillRoutes);
 app.use('/api/careers', careerRoutes); 
 app.use('/api/projects', projectRoutes);
 app.use('/api/skills', skillRoutes);
-app.use('/api/education', educationRoutes);
+app.use('/api/educations', educationRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
