@@ -44,7 +44,8 @@ class EducationController {
             if (!school_name || !school_name.trim(), 
                 !end_time || !end_time.trim(), 
                 !start_time || !start_time.trim(), 
-                !location || location.trim()) {
+                !location || !location.trim()
+            ) {
                 return res.status(400).json({
                     error: 'All data is required'
                 });
