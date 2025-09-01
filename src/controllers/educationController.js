@@ -97,6 +97,7 @@ class EducationController {
                 image: imageUrl,
                 start_time: start_time || null,
                 end_time: end_time || null,
+                locatioin: location || null
             });
 
             res.status(201).json(newCert);
