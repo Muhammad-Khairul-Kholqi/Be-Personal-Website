@@ -106,7 +106,8 @@ class AuthController {
             const {
                 fullname,
                 username,
-                description,
+                short_description,
+                long_description,
                 address,
                 email,
                 skillIds
@@ -116,7 +117,8 @@ class AuthController {
             console.log('Received data:', {
                 fullname,
                 username,
-                description,
+                short_description,
+                long_description,
                 address,
                 email,
                 skillIds
@@ -252,7 +254,8 @@ class AuthController {
             const payload = {
                 fullname: (typeof fullname === 'string' && fullname.trim()) ? fullname.trim() : existing.fullname,
                 username: (typeof username === 'string' && username.trim()) ? username.trim() : existing.username,
-                description: typeof description === 'string' ? description.trim() : existing.description,
+                short_description: typeof short_description === 'string' ? short_description.trim() : existing.short_description,
+                long_description: typeof long_description === 'string' ? long_description.trim() : existing.long_description,
                 address: typeof address === 'string' ? address.trim() : existing.address,
                 email: typeof email === 'string' ? email.trim() : existing.email,
                 image: imageUrl,
