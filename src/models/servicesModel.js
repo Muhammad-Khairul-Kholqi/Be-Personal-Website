@@ -29,7 +29,8 @@ class ServicesModel {
         title,
         hashtag,
         description,
-        icon
+        icon,
+        color
     }) {
         const {
             data,
@@ -40,7 +41,8 @@ class ServicesModel {
                 title,
                 hashtag,
                 description,
-                icon
+                icon,
+                color
             }])
             .select()
             .single();
@@ -52,7 +54,8 @@ class ServicesModel {
         title,
         hashtag,
         description,
-        icon
+        icon,
+        color
     }) {
         const {
             data,
@@ -63,7 +66,8 @@ class ServicesModel {
                 title,
                 hashtag,
                 description,
-                icon
+                icon,
+                color
             })
             .eq('id', id)
             .select()
