@@ -41,7 +41,10 @@ class EducationController {
                 end_time,
                 location
             } = req.body;
-            if (!school_name || !school_name.trim(), !end_time || !end_time.trim(), !start_time || !start_time.trim(), !location || location.trim()) {
+            if (!school_name || !school_name.trim(), 
+                !end_time || !end_time.trim(), 
+                !start_time || !start_time.trim(), 
+                !location || location.trim()) {
                 return res.status(400).json({
                     error: 'All data is required'
                 });
@@ -97,7 +100,7 @@ class EducationController {
                 image: imageUrl,
                 start_time: start_time || null,
                 end_time: end_time || null,
-                locatioin: location || null
+                location: location || null
             });
 
             res.status(201).json(newCert);
@@ -174,7 +177,7 @@ class EducationController {
                 image: imageUrl,
                 start_time: start_time || null,
                 end_time: end_time || null,
-                localStorage: location || null
+                location: location || null,
             });
 
             res.json(updatedCert);
