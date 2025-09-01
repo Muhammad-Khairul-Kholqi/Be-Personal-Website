@@ -32,7 +32,8 @@ class ContactController {
                 title,
                 link,
                 icon,
-                username
+                username,
+                color
             } = req.body;
             if (!title || !title.trim()) {
                 return res.status(400).json({
@@ -54,12 +55,18 @@ class ContactController {
                     error: 'Username is required'
                 });
             }
+            if (!color || !color.trim()) {
+                return res.status(400).json({
+                    error: 'Color is required'
+                });
+            }
 
             const newSerc = await ContactModel.create({
                 title: title.trim(),
                 link: link.trim(),
                 icon: icon.trim(),
-                username: username.trim()
+                username: username.trim(),
+                color: color.trim()
             });
             return res.status(201).json(newSerc);
         } catch (err) {
@@ -85,14 +92,16 @@ class ContactController {
                 title,
                 link,
                 icon,
-                username
+                username,
+                color
             } = req.body;
 
             const updatedSerc = await ContactModel.update(id, {
                 title: title !== undefined ? title.trim() : existing.title,
                 link: link !== undefined ? link.trim() : existing.description,
                 icon: icon !== undefined ? icon.trim() : existing.icon,
-                username: username !== undefined ? username.trim() : existing.username
+                username: username !== undefined ? username.trim() : existing.username,
+                color: color !== undefined ? color.trim() : existing.color
             });
             res.json(updatedSerc);
         } catch (err) {

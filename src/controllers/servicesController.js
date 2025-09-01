@@ -32,7 +32,8 @@ class ServicesController {
                 title,
                 description,
                 hashtag,
-                icon
+                icon,
+                color
             } = req.body;
             if (!title || !title.trim()) {
                 return res.status(400).json({
@@ -54,12 +55,18 @@ class ServicesController {
                     error: 'Icon is required'
                 });
             }
+            if (!color || !color.trim()) {
+                return res.status(400).json({
+                    error: 'Color is required'
+                });
+            }
 
             const newSerc = await ServicesModel.create({
                 title: title.trim(),
                 description: description.trim(),
                 hashtag: hashtag.trim(),
-                icon: icon.trim()
+                icon: icon.trim(),
+                color: color.trim(),
             });
             return res.status(201).json(newSerc);
         } catch (err) {
@@ -85,14 +92,16 @@ class ServicesController {
                 title,
                 description,
                 hashtag,
-                icon
+                icon,
+                color
             } = req.body;
 
             const updatedSerc = await ServicesModel.update(id, {
                 title: title !== undefined ? title.trim() : existing.title,
                 description: description !== undefined ? description.trim() : existing.description,
                 hashtag: hashtag !== undefined ? hashtag.trim() : existing.hashtag,
-                icon: icon !== undefined ? icon.trim() : existing.icon
+                icon: icon !== undefined ? icon.trim() : existing.icon,
+                color: color !== undefined ? color.trim() : existing.color
             });
             res.json(updatedSerc);
         } catch (err) {
