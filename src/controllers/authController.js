@@ -98,6 +98,95 @@ class AuthController {
         }
     }
 
+    static async getPublicProfile(req, res) {
+        try {
+            const {
+                userId
+            } = req.params;
+
+            if (!userId) {
+                return res.status(400).json({
+                    error: 'User ID is required'
+                });
+            }
+
+            const user = await UserModel.getById(userId);
+            if (!user) {
+                return res.status(404).json({
+                    error: 'User not found'
+                });
+            }
+
+            const userSkills = await SkillsModel.getUserSkills(userId);
+
+            const publicData = {
+                id: user.id,
+                fullname: user.fullname,
+                username: user.username,
+                short_description: user.short_description,
+                long_description: user.long_description,
+                address: user.address,
+                image: user.image,
+                resume: user.resume,
+                skills: userSkills,
+                created_at: user.created_at,
+                updated_at: user.updated_at
+            };
+
+            res.json(publicData);
+        } catch (err) {
+            console.error('Get public profile error:', err);
+            res.status(500).json({
+                error: err.message
+            });
+        }
+    }
+
+    static async getMainProfile(req, res) {
+        try {
+            const {
+                data: users,
+                error
+            } = await supabase
+                .from('users')
+                .select('*')
+                .limit(1)
+                .single();
+
+            if (error) {
+                if (error.code === 'PGRST116') {
+                    return res.status(404).json({
+                        error: 'No profile found'
+                    });
+                }
+                throw error;
+            }
+
+            const userSkills = await SkillsModel.getUserSkills(users.id);
+
+            const publicData = {
+                id: users.id,
+                fullname: users.fullname,
+                username: users.username,
+                short_description: users.short_description,
+                long_description: users.long_description,
+                address: users.address,
+                image: users.image,
+                resume: users.resume,
+                skills: userSkills,
+                created_at: users.created_at,
+                updated_at: users.updated_at
+            };
+
+            res.json(publicData);
+        } catch (err) {
+            console.error('Get main profile error:', err);
+            res.status(500).json({
+                error: err.message
+            });
+        }
+    }
+
     static async updateProfile(req, res) {
         let localImagePath;
         let localResumePath;
