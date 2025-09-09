@@ -89,57 +89,77 @@ class ProjectModel {
         technology_ids,
         images = []
     }) {
-        const {
-            data: projectData,
-            error: projectError
-        } = await supabase
-            .from('projects')
-            .insert([{
-                title,
-                description,
-                list_job,
-                url_github,
-                url_demo,
-                status
-            }])
-            .select()
-            .single();
-
-        if (projectError) throw projectError;
-
-        if (technology_ids && technology_ids.length > 0) {
-            const projectTechnologies = technology_ids.map(tech_id => ({
-                project_id: projectData.id,
-                technology_id: tech_id
-            }));
-
+        try {
             const {
-                error: relationError
+                data: projectData,
+                error: projectError
             } = await supabase
-                .from('project_technologies')
-                .insert(projectTechnologies);
+                .from('projects')
+                .insert([{
+                    title,
+                    description,
+                    list_job,
+                    url_github,
+                    url_demo,
+                    status
+                }])
+                .select()
+                .single();
 
-            if (relationError) throw relationError;
+            if (projectError) {
+                console.error('Project insert error:', projectError);
+                throw projectError;
+            }
+
+            console.log('Project created:', projectData);
+
+            if (technology_ids && technology_ids.length > 0) {
+                const projectTechnologies = technology_ids.map(tech_id => ({
+                    project_id: projectData.id,
+                    technology_id: tech_id
+                }));
+
+                console.log('Inserting technologies:', projectTechnologies);
+
+                const {
+                    error: relationError
+                } = await supabase
+                    .from('project_technologies')
+                    .insert(projectTechnologies);
+
+                if (relationError) {
+                    console.error('Technology relation error:', relationError);
+                    throw relationError;
+                }
+            }
+
+            if (images && images.length > 0) {
+                const projectImages = images.map((image, index) => ({
+                    project_id: projectData.id,
+                    image_url: typeof image === 'string' ? image : image.image_url,
+                    image_order: typeof image === 'object' && image.image_order ? image.image_order : index + 1,
+                    is_primary: typeof image === 'object' && image.is_primary !== undefined ? image.is_primary : index === 0
+                }));
+
+                console.log('Inserting images:', projectImages);
+
+                const {
+                    error: imageError
+                } = await supabase
+                    .from('project_images')
+                    .insert(projectImages);
+
+                if (imageError) {
+                    console.error('Image insert error:', imageError);
+                    throw imageError;
+                }
+            }
+
+            return await this.getById(projectData.id);
+        } catch (error) {
+            console.error('Create project error:', error);
+            throw error;
         }
-
-        if (images && images.length > 0) {
-            const projectImages = images.map((imageUrl, index) => ({
-                project_id: projectData.id,
-                image_url: imageUrl,
-                image_order: index + 1,
-                is_primary: index === 0
-            }));
-
-            const {
-                error: imageError
-            } = await supabase
-                .from('project_images')
-                .insert(projectImages);
-
-            if (imageError) throw imageError;
-        }
-
-        return projectData;
     }
 
     static async update(id, {
@@ -222,11 +242,11 @@ class ProjectModel {
             }
 
             if (images.length > 0) {
-                const projectImages = images.map((imageUrl, index) => ({
+                const projectImages = images.map((image, index) => ({
                     project_id: id,
-                    image_url: imageUrl,
-                    image_order: index + 1,
-                    is_primary: index === 0
+                    image_url: typeof image === 'string' ? image : image.image_url,
+                    image_order: typeof image === 'object' && image.image_order ? image.image_order : index + 1,
+                    is_primary: typeof image === 'object' && image.is_primary !== undefined ? image.is_primary : index === 0
                 }));
 
                 const {
@@ -239,7 +259,7 @@ class ProjectModel {
             }
         }
 
-        return projectData;
+        return await this.getById(id);
     }
 
     static async delete(id) {

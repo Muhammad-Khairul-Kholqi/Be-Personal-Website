@@ -43,6 +43,9 @@ class ProjectController {
     static async create(req, res) {
         let localPaths = [];
         try {
+            console.log('Request body:', req.body);
+            console.log('Request files:', req.files);
+
             const {
                 title,
                 description,
@@ -50,7 +53,9 @@ class ProjectController {
                 url_github,
                 url_demo,
                 status,
-                technology_ids
+                technology_ids,
+                technologies, 
+                images: bodyImages
             } = req.body;
 
             if (!title || !title.trim()) {
@@ -58,77 +63,69 @@ class ProjectController {
                     error: 'Title is required'
                 });
             }
-            if (!description || !description.trim()) {
-                return res.status(400).json({
-                    error: 'Description is required'
-                });
-            }
-            if (!list_job || !list_job.trim()) {
-                return res.status(400).json({
-                    error: 'List Job is required'
-                });
-            }
-            if (!status || !status.trim()) {
-                return res.status(400).json({
-                    error: 'Status is required'
-                });
-            }
 
             let imageUrls = [];
             const files = req.files || (req.file ? [req.file] : []);
 
-            if (files.length > MAX_IMAGES) {
-                files.forEach(file => {
-                    try {
-                        fs.unlinkSync(file.path);
-                    } catch (_) {}
-                });
-                return res.status(400).json({
-                    error: `Maximum ${MAX_IMAGES} images allowed`
-                });
-            }
-
-            for (const file of files) {
-                const fileSizeInMB = file.size / (1024 * 1024);
-                if (fileSizeInMB > MAX_MB) {
-                    files.forEach(f => {
+            if (files && files.length > 0) {
+                if (files.length > MAX_IMAGES) {
+                    files.forEach(file => {
                         try {
-                            fs.unlinkSync(f.path);
+                            fs.unlinkSync(file.path);
                         } catch (_) {}
                     });
                     return res.status(400).json({
-                        error: `File too large. Max ${MAX_MB}MB allowed per image`
+                        error: `Maximum ${MAX_IMAGES} images allowed`
                     });
                 }
 
-                localPaths.push(file.path);
-                const ext = path.extname(file.originalname) || '';
-                const fileName = `uploads/project-images/${Date.now()}-${Math.round(Math.random()*1e9)}${ext}`;
-                const buffer = fs.readFileSync(file.path);
+                for (const file of files) {
+                    const fileSizeInMB = file.size / (1024 * 1024);
+                    if (fileSizeInMB > MAX_MB) {
+                        files.forEach(f => {
+                            try {
+                                fs.unlinkSync(f.path);
+                            } catch (_) {}
+                        });
+                        return res.status(400).json({
+                            error: `File too large. Max ${MAX_MB}MB allowed per image`
+                        });
+                    }
 
-                const {
-                    error: uploadError
-                } = await supabase.storage
-                    .from(BUCKET)
-                    .upload(fileName, buffer, {
-                        contentType: file.mimetype,
-                    });
+                    localPaths.push(file.path);
+                    const ext = path.extname(file.originalname) || '';
+                    const fileName = `uploads/project-images/${Date.now()}-${Math.round(Math.random()*1e9)}${ext}`;
+                    const buffer = fs.readFileSync(file.path);
 
-                if (uploadError) throw uploadError;
+                    const {
+                        error: uploadError
+                    } = await supabase.storage
+                        .from(BUCKET)
+                        .upload(fileName, buffer, {
+                            contentType: file.mimetype,
+                        });
 
-                const {
-                    data,
-                    error: publicUrlError
-                } = supabase.storage
-                    .from(BUCKET)
-                    .getPublicUrl(fileName);
+                    if (uploadError) throw uploadError;
 
-                if (publicUrlError) throw publicUrlError;
+                    const {
+                        data,
+                        error: publicUrlError
+                    } = supabase.storage
+                        .from(BUCKET)
+                        .getPublicUrl(fileName);
 
-                imageUrls.push(data.publicUrl);
+                    if (publicUrlError) throw publicUrlError;
+
+                    imageUrls.push(data.publicUrl);
+                }
+            }
+            else if (bodyImages && Array.isArray(bodyImages) && bodyImages.length > 0) {
+                console.log('Using images from JSON body:', bodyImages);
+                imageUrls = bodyImages;
             }
 
             let parsedTechnologyIds = [];
+
             if (technology_ids) {
                 try {
                     parsedTechnologyIds = typeof technology_ids === 'string' ?
@@ -140,7 +137,14 @@ class ProjectController {
                 } catch (parseError) {
                     throw new Error('Invalid technology_ids format');
                 }
+            } else if (technologies && Array.isArray(technologies)) {
+                parsedTechnologyIds = technologies.map(tech =>
+                    typeof tech === 'object' ? tech.technology_id : tech
+                ).filter(Boolean);
             }
+
+            console.log('Final technology IDs:', parsedTechnologyIds);
+            console.log('Final images:', imageUrls);
 
             const newProject = await ProjectModel.create({
                 title: title.trim(),
@@ -161,6 +165,7 @@ class ProjectController {
 
             return res.status(201).json(newProject);
         } catch (err) {
+            console.error('Create project error:', err);
             localPaths.forEach(path => {
                 try {
                     fs.unlinkSync(path);
@@ -185,7 +190,9 @@ class ProjectController {
                 url_github,
                 url_demo,
                 status,
-                technology_ids
+                technology_ids,
+                technologies,
+                images: bodyImages
             } = req.body;
 
             const existing = await ProjectModel.getById(id);
@@ -257,6 +264,8 @@ class ProjectController {
 
                     imageUrls.push(data.publicUrl);
                 }
+            } else if (bodyImages !== undefined) {
+                imageUrls = bodyImages;
             }
 
             let parsedTechnologyIds;
@@ -271,6 +280,10 @@ class ProjectController {
                 } catch (parseError) {
                     throw new Error('Invalid technology_ids format');
                 }
+            } else if (technologies !== undefined && Array.isArray(technologies)) {
+                parsedTechnologyIds = technologies.map(tech =>
+                    typeof tech === 'object' ? tech.technology_id : tech
+                ).filter(Boolean);
             }
 
             const payload = {
