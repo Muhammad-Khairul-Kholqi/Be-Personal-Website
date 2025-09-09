@@ -5,6 +5,7 @@ const fs = require('fs');
 
 const BUCKET = 'project-images';
 const MAX_MB = 10;
+const MAX_IMAGES = 5;
 
 class ProjectController {
     static async getAll(req, res) {
@@ -40,7 +41,7 @@ class ProjectController {
     }
 
     static async create(req, res) {
-        let localPath;
+        let localPaths = [];
         try {
             const {
                 title,
@@ -73,30 +74,44 @@ class ProjectController {
                 });
             }
 
-            let imageUrl = null;
+            let imageUrls = [];
+            const files = req.files || (req.file ? [req.file] : []);
 
-            if (req.file) {
-                const fileSizeInMB = req.file.size / (1024 * 1024);
-                if (fileSizeInMB > MAX_MB) {
+            if (files.length > MAX_IMAGES) {
+                files.forEach(file => {
                     try {
-                        fs.unlinkSync(req.file.path);
+                        fs.unlinkSync(file.path);
                     } catch (_) {}
+                });
+                return res.status(400).json({
+                    error: `Maximum ${MAX_IMAGES} images allowed`
+                });
+            }
+
+            for (const file of files) {
+                const fileSizeInMB = file.size / (1024 * 1024);
+                if (fileSizeInMB > MAX_MB) {
+                    files.forEach(f => {
+                        try {
+                            fs.unlinkSync(f.path);
+                        } catch (_) {}
+                    });
                     return res.status(400).json({
-                        error: `File too large. Max ${MAX_MB}MB allowed`
+                        error: `File too large. Max ${MAX_MB}MB allowed per image`
                     });
                 }
 
-                localPath = req.file.path;
-                const ext = path.extname(req.file.originalname) || '';
+                localPaths.push(file.path);
+                const ext = path.extname(file.originalname) || '';
                 const fileName = `uploads/project-images/${Date.now()}-${Math.round(Math.random()*1e9)}${ext}`;
-                const buffer = fs.readFileSync(localPath);
+                const buffer = fs.readFileSync(file.path);
 
                 const {
                     error: uploadError
                 } = await supabase.storage
                     .from(BUCKET)
                     .upload(fileName, buffer, {
-                        contentType: req.file.mimetype,
+                        contentType: file.mimetype,
                     });
 
                 if (uploadError) throw uploadError;
@@ -110,29 +125,20 @@ class ProjectController {
 
                 if (publicUrlError) throw publicUrlError;
 
-                imageUrl = data.publicUrl;
-
-                try {
-                    fs.unlinkSync(localPath);
-                } catch (_) {}
+                imageUrls.push(data.publicUrl);
             }
 
             let parsedTechnologyIds = [];
             if (technology_ids) {
                 try {
                     parsedTechnologyIds = typeof technology_ids === 'string' ?
-                        JSON.parse(technology_ids) :
-                        technology_ids;
+                        JSON.parse(technology_ids) : technology_ids;
 
                     if (!Array.isArray(parsedTechnologyIds)) {
-                        return res.status(400).json({
-                            error: 'Technology IDs must be an array'
-                        });
+                        throw new Error('Technology IDs must be an array');
                     }
                 } catch (parseError) {
-                    return res.status(400).json({
-                        error: 'Invalid technology_ids format'
-                    });
+                    throw new Error('Invalid technology_ids format');
                 }
             }
 
@@ -143,17 +149,23 @@ class ProjectController {
                 url_github: url_github || null,
                 url_demo: url_demo || null,
                 status: status || null,
-                image: imageUrl,
-                technology_ids: parsedTechnologyIds
+                technology_ids: parsedTechnologyIds,
+                images: imageUrls
+            });
+
+            localPaths.forEach(path => {
+                try {
+                    fs.unlinkSync(path);
+                } catch (_) {}
             });
 
             return res.status(201).json(newProject);
         } catch (err) {
-            if (localPath) {
+            localPaths.forEach(path => {
                 try {
-                    fs.unlinkSync(localPath);
+                    fs.unlinkSync(path);
                 } catch (_) {}
-            }
+            });
             return res.status(500).json({
                 error: err.message
             });
@@ -161,7 +173,7 @@ class ProjectController {
     }
 
     static async update(req, res) {
-        let localPath;
+        let localPaths = [];
         try {
             const {
                 id
@@ -178,66 +190,72 @@ class ProjectController {
 
             const existing = await ProjectModel.getById(id);
             if (!existing) {
-                if (req.file) {
+                const files = req.files || (req.file ? [req.file] : []);
+                files.forEach(file => {
                     try {
-                        fs.unlinkSync(req.file.path);
+                        fs.unlinkSync(file.path);
                     } catch (_) {}
-                }
+                });
                 return res.status(404).json({
                     error: 'Project not found'
                 });
             }
 
-            let imageUrl = req.body.image || existing.image || null;
+            let imageUrls;
+            const files = req.files || (req.file ? [req.file] : []);
 
-            if (req.file) {
-                const fileSizeInMB = req.file.size / (1024 * 1024);
-                if (fileSizeInMB > MAX_MB) {
-                    try {
-                        fs.unlinkSync(req.file.path);
-                    } catch (_) {}
+            if (files.length > 0) {
+                if (files.length > MAX_IMAGES) {
+                    files.forEach(file => {
+                        try {
+                            fs.unlinkSync(file.path);
+                        } catch (_) {}
+                    });
                     return res.status(400).json({
-                        error: `File too large. Max ${MAX_MB}MB allowed`
+                        error: `Maximum ${MAX_IMAGES} images allowed`
                     });
                 }
 
-                localPath = req.file.path;
-                const ext = path.extname(req.file.originalname) || '';
-                const fileName = `uploads/project-images/${Date.now()}-${Math.round(Math.random()*1e9)}${ext}`;
-                const buffer = fs.readFileSync(localPath);
-
-                const {
-                    error: uploadError
-                } = await supabase.storage
-                    .from(BUCKET)
-                    .upload(fileName, buffer, {
-                        contentType: req.file.mimetype,
-                        upsert: true,
-                    });
-
-                if (uploadError) throw uploadError;
-
-                const {
-                    data,
-                    error: publicUrlError
-                } = supabase.storage
-                    .from(BUCKET)
-                    .getPublicUrl(fileName);
-
-                if (publicUrlError) throw publicUrlError;
-
-                imageUrl = data.publicUrl;
-
-                try {
-                    fs.unlinkSync(localPath);
-                } catch (_) {}
-
-                if (existing.image && existing.image.includes(`/storage/v1/object/public/${BUCKET}/`)) {
-                    const parts = existing.image.split(`/${BUCKET}/`);
-                    if (parts.length > 1) {
-                        const oldPath = parts[1];
-                        await supabase.storage.from(BUCKET).remove([oldPath]);
+                imageUrls = [];
+                for (const file of files) {
+                    const fileSizeInMB = file.size / (1024 * 1024);
+                    if (fileSizeInMB > MAX_MB) {
+                        files.forEach(f => {
+                            try {
+                                fs.unlinkSync(f.path);
+                            } catch (_) {}
+                        });
+                        return res.status(400).json({
+                            error: `File too large. Max ${MAX_MB}MB allowed per image`
+                        });
                     }
+
+                    localPaths.push(file.path);
+                    const ext = path.extname(file.originalname) || '';
+                    const fileName = `uploads/project-images/${Date.now()}-${Math.round(Math.random()*1e9)}${ext}`;
+                    const buffer = fs.readFileSync(file.path);
+
+                    const {
+                        error: uploadError
+                    } = await supabase.storage
+                        .from(BUCKET)
+                        .upload(fileName, buffer, {
+                            contentType: file.mimetype,
+                            upsert: true,
+                        });
+
+                    if (uploadError) throw uploadError;
+
+                    const {
+                        data,
+                        error: publicUrlError
+                    } = supabase.storage
+                        .from(BUCKET)
+                        .getPublicUrl(fileName);
+
+                    if (publicUrlError) throw publicUrlError;
+
+                    imageUrls.push(data.publicUrl);
                 }
             }
 
@@ -245,40 +263,42 @@ class ProjectController {
             if (technology_ids !== undefined) {
                 try {
                     parsedTechnologyIds = typeof technology_ids === 'string' ?
-                        JSON.parse(technology_ids) :
-                        technology_ids;
+                        JSON.parse(technology_ids) : technology_ids;
 
                     if (parsedTechnologyIds !== null && !Array.isArray(parsedTechnologyIds)) {
-                        return res.status(400).json({
-                            error: 'Technology IDs must be an array'
-                        });
+                        throw new Error('Technology IDs must be an array');
                     }
                 } catch (parseError) {
-                    return res.status(400).json({
-                        error: 'Invalid technology_ids format'
-                    });
+                    throw new Error('Invalid technology_ids format');
                 }
             }
 
             const payload = {
-                title: (typeof title === 'string' && title.trim()) ? title.trim() : existing.agency_name,
+                title: (typeof title === 'string' && title.trim()) ? title.trim() : existing.title,
                 description: (typeof description === 'string') ? description.trim() || null : existing.description,
                 list_job: (typeof list_job === 'string') ? list_job.trim() || null : existing.list_job,
                 url_github: url_github !== undefined ? url_github : existing.url_github,
                 url_demo: url_demo !== undefined ? url_demo : existing.url_demo,
                 status: status !== undefined ? status : existing.status,
-                image: imageUrl,
-                technology_ids: parsedTechnologyIds
+                technology_ids: parsedTechnologyIds,
+                images: imageUrls
             };
 
             const updatedProject = await ProjectModel.update(id, payload);
+
+            localPaths.forEach(path => {
+                try {
+                    fs.unlinkSync(path);
+                } catch (_) {}
+            });
+
             return res.json(updatedProject);
         } catch (err) {
-            if (localPath) {
+            localPaths.forEach(path => {
                 try {
-                    fs.unlinkSync(localPath);
+                    fs.unlinkSync(path);
                 } catch (_) {}
-            }
+            });
             return res.status(500).json({
                 error: err.message
             });
@@ -296,14 +316,6 @@ class ProjectController {
                 return res.status(404).json({
                     error: 'Project not found'
                 });
-            }
-
-            if (project.image && typeof project.image === 'string' && project.image.includes(`/storage/v1/object/public/${BUCKET}/`)) {
-                const parts = project.image.split(`/${BUCKET}/`);
-                if (parts.length > 1) {
-                    const imagePath = parts[1];
-                    await supabase.storage.from(BUCKET).remove([imagePath]);
-                }
             }
 
             await ProjectModel.delete(id);
